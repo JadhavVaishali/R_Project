@@ -1,0 +1,241 @@
+#..........Gene Analysis Project'...........#
+
+--------------------------------------------------------------------------------
+#Removing already existing objects..# Functions like a Clearscreen...#
+  
+rm(list = ls())
+
+#loading data matrix  named "expressionValues (2).RData" on which anaylsis is to be performed
+
+load("C://Users/vaish/Downloads/expressionValues (2).RData")
+
+
+#check dimesions of matrix 
+
+dim(dataGSE9782)
+
+#returns the first parts of the vector,matrix etc..
+
+head(dataGSE9782)
+
+#returns the last parts of the vector or matrix etc...
+
+tail(dataGSE9782)
+
+ 
+##Perform a t-test to compare the control and treated groups and compute the difference in mean 
+
+#log base 2 expression and create an output data frame that contains the following columns:
+
+#gene ids (row names of expression data matrix), p-value, t-score, logFC;
+
+#function f that calculates tscore,FC,logFC,pvalue,Mean of treated,Mean of control
+
+f <- function(x)
+  {
+
+  treated=x[group =="treated"]
+  control=x[group =="control"]
+  p=t.test(treated,control,var.equal=TRUE)$p.value          #calculates p value
+  tscore=t.test(treated,control,var.equal=TRUE)$statistic   #calcuates tscore 
+  
+  treated_mean <- mean(treated)                             #Mean of treated samples
+  control_mean <- mean(control)                             #Mean of control samples
+ 
+  FC <- treated_mean/control_mean                           #calculation of Full change
+   
+  logFC<- log(FC,base = 2)                                  #taking log of FC
+  
+  c(logFC,p,tscore)                                         #takes objects to be concanated as arguements
+}
+
+# The apply function takes the matrix,rows and the function f as a parameter 
+# and returns value stores in dataframe named "results".
+# On executing it returnts the columnn values of logFC, p and t score calculated 
+# using f function
+
+results=t(apply(dataGSE9782,1,f))
+rownames(results)<-rownames(dataGSE9782)
+colnames(results)<-c("logFC","p","tscore")
+results
+head(results)
+is.vector(group)
+-----------------------------------------------------------------------------------------
+
+pVal<-wilcox.test(control,treated)$p.value
+pVal
+
+dim(results)
+head(results)
+#--------------------------------------------------------
+
+#Absolute value log fold change
+# abs on vectors
+RetrevdLogFC_values<-results[,"logFC"]
+RetrevdLogFC_values
+
+abs(RetrevdLogFC_values)     #retrieves logFC values
+L<-abs(RetrevdLogFC_values)  #returns absolute value of LogFC
+L
+head(L)
+#--------Absolutevalue of L>1 -----LFC_greaterThan1----------------
+#L[L>1]
+#LFC_greaterThan1<-L[L>1]
+#LFC_greaterThan1
+#head(LFC_greaterThan1)
+
+#-----------------------------------------------------#
+
+#FDR adjusted p-value
+adjustedp=p.adjust(results[,2],method="fdr")         #returns p value adjusted using FDR method
+#results=cbind(results,adjustedp)
+#results
+
+#-----------------------------------------------------#
+
+ 
+
+
+#adjusted pvalue less than 00.5
+
+padj<-adjustedp[adjustedp<0.05]                     #returns pvalueless by 0.05 than adjustedp
+padj   
+head(padj)                                           
+results
+colnames(results)<-c(padj,LFC_greaterThan1)              
+head(results)
+---------------------------------------------------------------------
+
+#Wilcoxon test
+  
+w <- function (y)
+{
+  
+  treated=y[group =="treated"]
+  control=y[group =="control"]
+  p=t.test(treated,control,var.equal=TRUE)$p.value
+  tscore=t.test(treated,control,var.equal=TRUE)$statistic
+  tscore
+  tscore[tscore<0.05]
+   
+  pValue=wilcox.test(treated,control)$p.value  #Performs one- and two-sample Wilcoxon tests on 
+                                               #....vectors of data;
+  pValue
+  
+  pValue[pValue<0.05]   
+                                               #retrieves pvalues less than significance level of 5%
+  treated_mean <- mean(treated)
+  control_mean <- mean(control)
+  FC <- treated_mean/control_mean
+   
+  logFC<- log(FC,base = 2)
+  c(pValue,tscore)
+}
+
+# .....Creating a DataFramedata ........#
+
+results=t(apply(dataGSE9782,1,w))
+rownames(results)<-rownames(dataGSE9782)
+colnames(results)<-c("pValue","tscore")
+results                                        #returns pvalue(from Wilcox test) and tscore value (from Ttest)
+head(results)
+#---------------------------------------------------
+
+#Creating a Volcano Plot....#
+
+ 
+plot(log2(results[,"logFC"]),-log10(results[,"p"]), col="red"  ,            
+xlim=c(-10, 10), ylim=c(0, 15),xlab="log2 fold change", ylab="-log10 p-value") 
+
+#plot function used for plotting of R objects
+#xlim and ylim takes the range of points to be plloteed
+#x and y coordinated are log2FC and p value respectively
+#xlabel and ylabel gives the names that appear on x and y axis
+
+
+
+points(log2(results[,"logFC"])[log2(results[,"logFC"])<-1&log2(results[,"logFC"])>1|
+-log10(results[,"p"])<3],-log10(results[,"p"])[log2(results[,"logFC"])<1]&log2(results[,"logFC"])>-1)
+
+#..................................................................................
+
+
+#....Plot the distribution function of log base 2 expression levels for the array (data provided);----------------------------------------------------------- 
+
+# The generic function hist computes a histogram of the given data matrix "dataGSE9782" If plot = TRUE, 
+#the resulting object of class "histogram" is plotted by plot.histogram, before it is returned. 
+#the following function returns the histogram plot of log base 2 of our data matrix.
+
+hist(log2(dataGSE9782)) 
+
+#....................................................................................
+ 
+
+#..retreiving results in a DataFrame...#
+
+df<-apply(results,2,max)
+df 
+ 
+df. <- as.data.frame(results)
+par(las = 3) # all axis labels horizontal
+boxplot(df., main = "boxplot(*, horizontal = TRUE)", horizontal = TRUE)
+
+#-----------------------------------------------------
+
+
+#.....kmeans.....top 25 genes with the lowest p-value...#
+
+kmeans(dataGSE9782,centers = 2,)
+
+ 
+lowvalues<-f(s)
+{
+  s<-min(adjustedp)
+}
+
+s
+
+df1<-adjustedp
+head(df1)
+sort(p)
+a<-apply(df1,1,min)
+a
+   
+
+k2 <- kmeans(a, centers = 2, nstart = 25)
+k2
+head
+
+str(k)
+tail(results)
+
+results <- results[order(results[,2],decreasing = F),]  
+results[1:25,] 
+
+rownames(results[1:25,])
+x<-rownames(results[1:25,])
+
+
+#sort(results,results[1:25,], rownames(results[1:25,])) #
+
+?sort 
+k2<-kmeans(t(dataGSE9782[x,]),centers=2)
+k2
+
+......................................
+ 
+
+
+
+ 
+ 
+
+ 
+ 
+ 
+
+ 
+
+
+ 
+ 
